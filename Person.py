@@ -8,16 +8,10 @@ class MyPerson:
         self.x = xi
         self.y = yi
         self.tracks = []
-        self.R = randint(0,255)
-        self.G = randint(0,255)
-        self.B = randint(0,255)
         self.done = False
-        self.state = '0'
+        self.state = '0' # 0 - если объект не пересек контрольную линию, 1 - если пересек
         self.age = 0
         self.dir = None
-
-    def getRGB(self):
-        return (self.R,self.G,self.B)
 
     def getTracks(self):
         return self.tracks
@@ -52,7 +46,7 @@ class MyPerson:
     def going_UP(self,mid_start,mid_end):
         if len(self.tracks) >= 2:
             if self.state == '0':
-                if self.tracks[-1][1] < mid_end and self.tracks[-2][1] >= mid_end: #cruzo la linea
+                if self.tracks[-1][1] < mid_end and self.tracks[-2][1] >= mid_end: # Есть пересечение первичной линии конца
                     state = '1'
                     self.dir = 'up'
                     return True
@@ -64,7 +58,7 @@ class MyPerson:
     def going_DOWN(self,mid_start,mid_end):
         if len(self.tracks) >= 2:
             if self.state == '0':
-                if self.tracks[-1][1] > mid_start and self.tracks[-2][1] <= mid_start: #cruzo la linea
+                if self.tracks[-1][1] > mid_start and self.tracks[-2][1] <= mid_start: # Есть пересечение первичной линии начала
                     state = '1'
                     self.dir = 'down'
                     return True
