@@ -3,8 +3,7 @@ import time
 
 class MyPerson:
     tracks = []
-    def __init__(self, i, xi, yi):
-        self.i = i
+    def __init__(self, xi, yi):
         self.x = xi
         self.y = yi
         self.tracks = []
@@ -15,10 +14,7 @@ class MyPerson:
 
     def getTracks(self):
         return self.tracks
-
-    def getId(self):
-        return self.i
-
+    
     def getState(self):
         return self.state
 
