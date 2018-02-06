@@ -14,7 +14,7 @@ class MyPerson:
 
     def getTracks(self):
         return self.tracks
-    
+
     def getState(self):
         return self.state
 
