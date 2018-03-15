@@ -5,12 +5,15 @@ import Person
 
 ## Вспомогательные функции
 # Записываем в лог файл чтобы далее оперировать этими данными. Файлы так составлены чтобы их смогла прочитать 1С
-def Save_log(cnt_up,cnt_down):
+def Save_log(direction):
 try:
+    if direction == "up": # Если движение шло вверх, то сохраняем одни данные. Если нет - другие
+            direct = ["1","2"]
+        else:
+            direct = ["1","1"]
     date_str = str(time.strftime("%x"))
     log_file = open(date_str[0] + date_str[1] + date_str[3] + date_str[4] + date_str[6] + date_str[7] + "00.txt", "a")
-    log_file.write( date_str[0] + date_str[1] + "." + date_str[3] + date_str[4] + ".20" + date_str[6] + date_str[7] + "|какое-то число|" + str(cnt_up) + "|" + str(cnt_down) + "|PCCapture|0|\n")
-    log_file.close();
+    log_file.write( date_str[3] + date_str[4] + "." + date_str[0] + date_str[1] + ".20" + date_str[6] + date_str[7] + "|какое-то число|" + direct[0] + "|" + direct[1] + "|PCCapture|0|\n")    log_file.close();
     return true
 except:
     return false
@@ -198,12 +201,12 @@ while(cap.isOpened()): # Пока камера передает изображе
                         cnt_up += 1;
                         # Записываем в лог файл чтобы далее оперировать этими данными. Файлы так составлены чтобы их смогла прочитать 1С
                         print ("Person crossed going up at ", str(time.strftime("%x")) )
-                        if not Save_log(cnt_up,cnt_down)
+                        if not Save_log("up")
                             print("File save error")
                     elif i.going_DOWN(line_down,line_up) == True:
                         cnt_down += 1;
                         print ("Person crossed going up at ", str(time.strftime("%x")) )
-                        if not Save_log(cnt_up,cnt_down)
+                        if not Save_log("down")
                             print("File save error")
                     break
 
