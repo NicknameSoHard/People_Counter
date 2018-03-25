@@ -8,9 +8,9 @@ class MyPerson:
         self.y = yi
         self.tracks = []
         self.done = False
-        self.state = '0' # 0 - если объект не пересек контрольную линию, 1 - если пересек
-        self.age = 0
+        self.state = '0' # 0 - если объект не пересек контрольную линию, 1 - если пересек одну линию, 2 - если пересек две линии
         self.dir = None
+        self.crossed = 0
 
     def getTracks(self):
         return self.tracks
@@ -28,10 +28,10 @@ class MyPerson:
         return self.y
 
     def updateCoords(self, xn, yn):
-        self.age = 0
-        self.tracks.append([self.x,self.y])
+        self.tracks.append([self.x, self.y])
         self.x = xn
         self.y = yn
+
 
     def setDone(self):
         self.done = True
@@ -39,22 +39,32 @@ class MyPerson:
     def timedOut(self):
         return self.done
 
-    def going_UP(self,mid_start,mid_end):
-        if len(self.tracks) >= 2:
+    def going_UP(self, line_down, line_up):
+        if len(self.tracks) >= 3:
             if self.state == '0':
-                if self.tracks[-1][1] < mid_end and self.tracks[-2][1] >= mid_end: # Есть пересечение первичной линии конца
-                    state = '1'
+                print("State 0")
+                if self.tracks[-1][1] < line_down and self.tracks[-2][1] >= line_down: # Есть пересечение конца снизу-вверх
+                    self.state = '1'
                     self.dir = 'up'
+                    return False
+            elif self.state == '1':
+                print("State 1")
+                if self.tracks[-2][1] < line_up and self.tracks[-1][1] >= line_up:
+                    self.state = '2'
                     return True
+            elif self.state == '2':
+                print("State 2")
+                self.setDone();
+                return False
             else:
                 return False
         else:
             return False
 
-    def going_DOWN(self,mid_start,mid_end):
+    def going_DOWN(self,line_down, line_up):
         if len(self.tracks) >= 2:
             if self.state == '0':
-                if self.tracks[-1][1] > mid_start and self.tracks[-2][1] <= mid_start: # Есть пересечение первичной линии начала
+                if self.tracks[-1][1] > line_up and self.tracks[-2][1] <= line_up: # Есть пересечение линии
                     state = '1'
                     self.dir = 'down'
                     return True
