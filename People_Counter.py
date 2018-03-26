@@ -200,7 +200,6 @@ while(cap.isOpened()): # Пока камера передает изображе
             for i in persons:
                 # Если объект близок с предыдущим уже найденым объектом, то это один объект
                 if abs(cx-i.getX()) <= w and abs(cy-i.getY()) <= h:
-                    print("Not new")
                     new = False
                     i.updateCoords(cx,cy) # Обновляем координаты объекта, проверяем пересек ли он линии
 
@@ -208,16 +207,19 @@ while(cap.isOpened()): # Пока камера передает изображе
                     # Если объек прошел через проверочные линии
                     if i.going_UP(line_down, line_up) == True:
                         cnt_up += 1;
-                    # Записываем в лог файл чтобы далее оперировать этими данными. Файлы так составлены чтобы их смогла прочитать 1С
+                        # Записываем в лог файл чтобы далее оперировать этими данными. Файлы так составлены чтобы их смогла прочитать 1С
                         print ("Person crossed going up at", str(date_now.strftime("%d.%m.%Y")) )
-
+                        if not Save_log(i.dir,date_now):
+                            print("Logfile save error")
+                        break
+                        
                     elif i.going_DOWN(line_down, line_up) == True:
                         cnt_down += 1;
                         print ("Person crossed going down at", str(date_now.strftime("%d.%m.%Y")) )
-
-                    if not Save_log(i.dir,date_now):
-                        print("Logfile save error")
-                    break
+                        if not Save_log(i.dir,date_now):
+                            print("Logfile save error")
+                        break
+              
 
                 # Удаляем экземпляр из отслеживания если работа с ними закончена
                 if i.timedOut():
