@@ -15,9 +15,6 @@ class MyPerson:
     def getTracks(self):
         return self.tracks
 
-    def getState(self):
-        return self.state
-
     def getDir(self):
         return self.dir
 
