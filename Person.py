@@ -9,7 +9,6 @@ class MyPerson:
         self.tracks = []
         self.done = False
         self.state = '0' # 0 - если объект не пересек контрольную линию, 1 - если пересек
-        self.age = 0
         self.dir = None
 
     def getTracks(self):
@@ -30,9 +29,6 @@ class MyPerson:
         self.x = xn
         self.y = yn
 
-    def setDone(self):
-        self.done = True
-
     def timedOut(self):
         return self.done
 
@@ -40,7 +36,7 @@ class MyPerson:
         if len(self.tracks) >= 2:
             if self.state == '0':
                 if self.tracks[-1][1] < mid_end and self.tracks[-2][1] >= mid_end: # Есть пересечение первичной линии конца
-                    state = '1'
+                    self.state = '1'
                     self.dir = 'up'
                     return True
             else:
@@ -52,7 +48,7 @@ class MyPerson:
         if len(self.tracks) >= 2:
             if self.state == '0':
                 if self.tracks[-1][1] > mid_start and self.tracks[-2][1] <= mid_start: # Есть пересечение первичной линии начала
-                    state = '1'
+                    self.state = '1'
                     self.dir = 'down'
                     return True
             else:
