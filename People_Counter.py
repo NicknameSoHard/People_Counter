@@ -1,112 +1,112 @@
-## Работа ведется HydroslidE и ostapella
+## The work is conducted by HydroslidE and ostapella
 import numpy as np
-import cv2, time
+import cv2
+impoty time
 from datetime import datetime
 import Person
 
+###############
+## Function ##
 ##############
-## Функции ##
-#############
-# Записываем в лог файл чтобы далее оперировать этими данными. Файлы  составляются таким образом, чтобы их смогла прочитать 1С, а так же чтобы поменять американский обычай записи месяц\число\год
+# Write log for 1C.
 def Save_log(direction, date_now):
     try:
-        if direction == "up": # Если движение шло вверх, то сохраняем одни данные. Если нет - другие
+        if direction == "up": # Direction
             direct = ["1","2"]
         else:
             direct = ["1","1"]
-#        date_now = datetime.now() # Текущая дата и время
-        ms_now = str(int(time.time()/1000)) # Время в миллисекундах, начиная с 12 часов 1 января 1970
-        log_file = open(date_now.strftime("%d%m%y%H") + ".txt", "a") #Добавить номер файлов
+#        date_now = datetime.now()
+        ms_now = str(int(time.time() / 1000)) # time in ms
+        log_file = open(date_now.strftime("%d%m%y%H") + ".txt", "a") # Filename
         log_file.write( date_now.strftime("%d.%m.%Y") + "|" + ms_now + "|" + direct[0] + "|" + direct[1] + "|PCCapture|"+"0" + "|\n")
         log_file.close();
-
         return True
     except:
         return False
 
-def nothing(x): # Обязательная функция, которая вызывается при движении трекпада.
-    pass # В нашем случае функция не должна ничего делать, так что пропускаем действие.
+def nothing(x): # Trackpad function
+    pass # nothing to do
 
-################################
-## Область основной программы ##
-################################
-#Счетчики входа и выхода
+##########
+## Main ##
+##########
+# Exit counters
 cnt_up   = 0
 cnt_down = 0
 
-#Захват видео
+# Catch video
 cap = cv2.VideoCapture("http://192.168.1.35//video.cgi")
 if not cap.isOpened(): #Подключение по айпи, если не удается, то попытка переключения на камеру по умолчанию
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print( "Video Capture error: Can't find camera.")
 
-#Загружаем сохраненные настройки
+# Load setting
 setting = []
 try:
     setting_file = open("Setting", "r")
     for line in setting_file:
         setting.append(int(line))
     setting_file.close()
-
-    if( len(setting) != 5 or min(setting) <= 0): # Вызываем исключение если по какой-то причине в файле были повреждены данные
+    if(len(setting) != 5 or min(setting) <= 0): # Raise exeption
         raise
-
     print("Load setting from file")
 except:
-    # При возникновении ошибки чтения присваиваем стандартные значения
-    setting = [30, 215, 252,288,192]
+    setting = [30, 215, 252, 288, 192]
     print("Load default setting")
 """
-Памятка по значениям настроек:
+Memo for settings:
 setting[0] - min threshold
 setting[1] - min object
 setting[2] - max object
 setting[3] - down line
 setting[4] - top line
-setting[5] - visible_frame - пока что нет
+setting[5] - visible_frame # In this version of program is off
 """
-
-frame_width = cap.get(3) # Получаем длину кадра
-frame_height = cap.get(4) # Получаем высоту кадра
-res = ( frame_height * frame_width )
-min_areaTH = res / 40  # Делим высоту и длину кадра на выбранный коэфициент. Его мы подбираем из соображений наилучшего обнаружения
-print ('Min area Threshold', min_areaTH) # Минимальный азмер объекта
+# take frame width and height
+frame_width = cap.get(3)
+frame_height = cap.get(4)
+res = (frame_height * frame_width)
+# Calculate the min and max size of the object
+min_areaTH = res / 40
+print ('Min area Threshold', min_areaTH)
 max_areaTH = res / 3
-print ('Max area Threshold', max_areaTH) # Максимальный размер объекта
+print ('Max area Threshold', max_areaTH)
 
-# Расчет первоначальных настроек
-line_down = int(3*(frame_height/5)) # Строим линию на уровне 3\5 Экрана
-print ("Red line y:",str(line_down) ) # Выводим в консольно координату по высоте
-pt1 =  [0, line_down]; # координаты крайних точек линий" линии
+# Calculate program setting
+# Build line on 3\5 screen
+line_down = int(3 * (frame_height / 5))
+print ("Red line coord y:", str(line_down))
+# Calculate coordinate extreme points
+pt1 =  [0, line_down];
 pt2 =  [frame_width, line_down];
-pts_L1 = np.array([pt1,pt2], np.int32) # собираем все в матрицу
-pts_L1 = pts_L1.reshape((-1,1,2)) # трансформирует матрицу чисел по виду 1 строка, 2 столбика для дальнейшей работы.
-line_down_color = (255,0,0) # Задаем цвет линии
+# Build and transform matrix
+pts_L1 = np.array([pt1, pt2], np.int32)
+pts_L1 = pts_L1.reshape((-1, 1, 2))
+line_down_color = (255, 0, 0)
 
-line_up = int(2*(frame_height/5)) # Аналогичные операции для 2\5 экрана
-print ("Blue line y:", str(line_up) )
+# Build line on 2\5 screen
+line_up = int(2*(frame_height / 5))
+print ("Blue line coord y:", str(line_up))
 pt3 =  [0, line_up];
 pt4 =  [frame_width, line_up];
-pts_L2 = np.array([pt3,pt4], np.int32)
-pts_L2 = pts_L2.reshape((-1,1,2))
-line_up_color = (0,0,255)
+pts_L2 = np.array([pt3, pt4], np.int32)
+pts_L2 = pts_L2.reshape((-1, 1, 2))
+line_up_color = (0, 0, 255)
 
-#Структурируем элементы морфографических фильтров
-kernelOp = np.ones((3,3),np.uint8) # Создает новый массив заданного размера и типа(В данном случае восьмибитный unsigned int)
+# Create new array with 8-bit unsigned integer for morphological filters
+kernelOp = np.ones((3,3),np.uint8)
 kernelOp2 = np.ones((5,5),np.uint8)
 kernelCl = np.ones((11,11),np.uint8)
 
-#Переменные для дальнейшей работы
-font = cv2.FONT_HERSHEY_SIMPLEX # Задаем шрифты для корректного отображения текста. Векторные шрифты Херши распространены за счет легкого преобразования в любую плоскость, угол и так далее.
-persons = [] # Создаем массив для детектора движения
+# Make Hershey Fonts
+font = cv2.FONT_HERSHEY_SIMPLEX
 
-#Объявление ползунков
+# Create panel and trackpads
 Panel = np.zeros([1,256], np.uint8)
 cv2.namedWindow("Panel", cv2.WINDOW_NORMAL)
 cv2.resizeWindow("Panel", int(frame_width), 720)
 
-# Создаем трекбары. Последим аргументом идет пропусск действия при изменении трекбара. Их значения мы будет получать позже
 cv2.createTrackbar("THRSH_MIN", "Panel", setting[0], 255, nothing)
 cv2.createTrackbar("MIN OBJ", "Panel", setting[1], 255, nothing)
 cv2.createTrackbar("MAX OBJ", "Panel", setting[2], 255, nothing)
@@ -114,15 +114,20 @@ cv2.createTrackbar("DWN_LINE", "Panel", setting[3], int(frame_height), nothing)
 cv2.createTrackbar("TOP_LINE", "Panel", setting[4], int(frame_height), nothing)
 #cv2.createTrackbar("VISIBLE_FRAME", "Panel", setting[5], 1, nothing)
 
+# Makes array for detector
+persons = []
 iteration_counter = 0
 now_setting = [1,1,1,1,1]
 
-ret, mask_frame = cap.read() # Читаем кадр для сравнения
-while(cap.isOpened()): # Пока камера передает изображения
-    ret, frame = cap.read()  #Считываем изображение с камеры
-    frame_ABS =  cv2.absdiff(frame, mask_frame) # Производим чистое вычитание из "первого" кажра текущего. Таким образом, имея эталонный кадр без движения мы получим в разнице все движение на кадре.
+# Get mask
+ret, mask_frame = cap.read()
+while(cap.isOpened()):
+    # Get frame
+    ret, frame = cap.read()
+    # Calculates the absolute difference between mask and frame frames(arrays).
+    frame_ABS =  cv2.absdiff(frame, mask_frame)
 #    cv2.imshow('ADS',frame_ABS)
-#    gray_frame = cv2.cvtColor(frame_ABS, cv2.COLOR_BGR2GRAY) # Переводим результат вычитания в оттенки серого
+    # Converts an image to gray color space.
     gray_frame = cv2.cvtColor(frame_ABS, cv2.COLOR_BGR2GRAY)
 
     cv2.imshow("Panel", Panel)
@@ -134,24 +139,24 @@ while(cap.isOpened()): # Пока камера передает изображе
     now_setting[4] = cv2.getTrackbarPos("TOP_LINE", "Panel")
 #    now_setting[5] = cv2.getTrackbarPos("VISIBLE_FRAME", "Panel")
 
-    if not np.array_equal(now_setting, setting): # Если положение трекбаров не совпадает, то пересчитываем переменные и сохраняем новые настройки
+    # if position trackbars not equal setting change and save setting
+    if not np.array_equal(now_setting, setting):
         for i in range(0,5):
             setting[i] = now_setting[i]
 
-        # Расчитываем параметры из значений
+        # Recalculate setting
         min_areaTH = res / (255-setting[1]+1)
         max_areaTH = res / (255-setting[2]+1)
-#        line_down = int(setting[4])
-#        line_up = int(setting[5])
 
-        if (line_down != int(setting[3])): #Если линии не совпадают, то перестраиваем
+        # If setting line position change, recalculate and her
+        if (line_down != int(setting[3])):
             line_down = int(setting[3])
-            print("Red line y:", str(line_down))  # Выводим в консольно координату по высоте
-            pt1 = [0, line_down];  # координаты крайних точек линий" линии
+            print("Red line y:", str(line_down))
+            pt1 = [0, line_down];
             pt2 = [frame_width, line_down];
-            pts_L1 = np.array([pt1, pt2], np.int32)  # собираем все в матрицу
-            pts_L1 = pts_L1.reshape((-1, 1, 2))  # трансформирует матрицу чисел по виду 1 строка, 2 столбика для дальнейшей работы.
-            line_down_color = (255, 0, 0)  # Задаем цвет линии
+            pts_L1 = np.array([pt1, pt2], np.int32)
+            pts_L1 = pts_L1.reshape((-1, 1, 2))
+            line_down_color = (255, 0, 0)
 
         if (line_up != int(setting[4])):
             line_up = int(setting[4])
@@ -162,112 +167,125 @@ while(cap.isOpened()): # Пока камера передает изображе
             pts_L2 = pts_L2.reshape((-1, 1, 2))
             line_up_color = (0, 0, 255)
 
+        # Save setting on file
         setting_file = open("Setting", "w")
         setting_file.write(str(setting[0]) +  "\n" + str(setting[1]) + "\n" + str(setting[2]) + "\n" + str(setting[3]) + "\n" + str(setting[4]))
         setting_file.close();
         print("Saved in file")
 
     try:
-        ret,imBin= cv2.threshold(gray_frame, setting[0], 255, cv2.THRESH_BINARY)  # Бинаризация изображения (Перевод изображний в черно-белые оттенки)
+        # Binarize the difference frame (Change color space to black and white)
+        ret,imBin= cv2.threshold(gray_frame, setting[0], 255, cv2.THRESH_BINARY)
 #        cv2.imshow('threshold',imBin)
-        morphology_mask = cv2.morphologyEx(imBin, cv2.MORPH_OPEN, kernelOp)   # "Открытие" Морфологической трансформирмации (эрозия -> растяжение). Позволяет удалить посторонние шумы вокруг объекта.
-        morphology_mask =  cv2.morphologyEx(morphology_mask , cv2.MORPH_CLOSE, kernelCl)  # "Закрытие" (растяжение -> эрозия) для соединения областей внутри объекта.
+        # Morphology transformation (open and close). Just filter the noise in the image.
+        morphology_mask = cv2.morphologyEx(imBin, cv2.MORPH_OPEN, kernelOp)
+        morphology_mask =  cv2.morphologyEx(morphology_mask , cv2.MORPH_CLOSE, kernelCl)
         cv2.imshow('morphologyEx', morphology_mask )
     except:
-        # При возникновении любой ошибки завершать выполнение программы
+        # All exceptions end the program.
         print('Error threshold or morphology. End of programm.')
         print ('UP:',cnt_up)
         print ('DOWN:',cnt_down )
         break
 
-    img_, contours0, hierarchy_ = cv2.findContours( #Ищем контуры на изображении
-        morphology_mask, #Бинарное изображение, где ищутся контуры
-        cv2.RETR_EXTERNAL, # Извлекает только крайние внешние контуры
-        cv2.CHAIN_APPROX_SIMPLE) # Сжимает все сегменты контура и оставляет только крайние точки.
+        # Find countours on image
+    img_, contours0, hierarchy_ = cv2.findContours(morphology_mask,
+        cv2.RETR_EXTERNAL, # Retrieves only the extreme outer contours
+        cv2.CHAIN_APPROX_SIMPLE # Extracts only edge points of contours
+    )
 
-    for cnt in contours0: # Для каждого контура
-        area = cv2.contourArea(cnt) # Вычисляет положение контура
-        if area > min_areaTH and area < max_areaTH: # При условии что объект больше заданного  начале происходит отслеживание
-            # Вычисление Момента изображения, т.е. суммарной характеристики контура(площади или длины)
+    # For all countours
+    for cnt in contours0:
+        # Calculate size of countour
+        area = cv2.contourArea(cnt)
+        if area > min_areaTH and area < max_areaTH:
+            # Image moments help you to calculate some features like center of mass of the object. We calculate it.
             M = cv2.moments(cnt)
-            cx = int(M['m10']/M['m00']) # Сохранияем крайние точки
+            # Get coordinates of the edges
+            cx = int(M['m10']/M['m00'])
             cy = int(M['m01']/M['m00'])
-            x,y,w,h = cv2.boundingRect(cnt) # получаем координаты прямоугольника
-
-            #Проверка всех обнаруженных контуров.
+            # Get the coordinates of the scope
+            x,y,w,h = cv2.boundingRect(cnt)
+            # Check for a new object
             new = True
-            # Работа с ранее обнаружеранее объектами
             for i in persons:
-                # Если объект близок с предыдущим уже найденым объектом, то это один объект
+                # If the object is close to already detected
                 if abs(cx-i.getX()) <= w and abs(cy-i.getY()) <= h:
                     #print("Not new obj")
                     new = False
-                    i.updateCoords(cx,cy) # Обновляем координаты объекта, проверяем пересек ли он линии
+                    # Update coordinates for better tracking
+                    i.updateCoords(cx,cy)
 
                     date_now = datetime.now()
-                    # Если объек прошел через проверочные линии
+                    # Check cross the line
                     if i.going_UP(line_down, line_up) == True:
                         cnt_up += 1;
-                    # Записываем в лог файл чтобы далее оперировать этими данными. Файлы так составлены чтобы их смогла прочитать 1С
+                        # Write log to console and file
                         print ("Person crossed going up at", str(date_now.strftime("%d.%m.%Y")) )
-                        if not Save_log("up",date_now):
+                        if not Save_log("up", date_now):
                             print("Logfile save error")
                         break
 
                     elif i.going_DOWN(line_down, line_up) == True:
                         cnt_down += 1;
                         print ("Person crossed going down at", str(date_now.strftime("%d.%m.%Y")) )
-                        if not Save_log("down",date_now):
+                        if not Save_log("down", date_now):
                             print("Logfile save error")
                         break
                 else:
                     print("New obj")
-                # Удаляем экземпляр из отслеживания если работа с ними закончена
+                # delete object if work done
                 if i.timedOut():
                     index = persons.index(i)
                     persons.pop(index)
                     del i
 
-            # Если обнаружен новый объект
+            # Create new object
             if new == True:
-                p = Person.MyPerson(cx,cy) # создаем новый экземпляр класса
-                persons.append(p) # добавляем новый объект в отслеживание
+                p = Person.MyPerson(cx, cy)
+                persons.append(p)
 
-            cv2.circle(frame,(cx,cy), 5, (0,0,255), -1) # ставим красную точку в центре зоны
-            cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2) # строим квадрат вокруг объекта
-            # cv2.drawContours(frame, cnt, -1, (0,255,0), 3) # Выделяем цветом контур объекта
-            iteration_counter = 0 # Обнуляем счетчик итераций при появлении нового объекта
+            # Draw red dot in a middle object, and make scope.
+            cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
+            cv2.rectangle(frame, (x, y),(x + w, y + h), (0, 255, 0), 2)
+            # cv2.drawContours(frame, cnt, -1, (0, 255, 0), 3) # And we can draw all object countours
+            iteration_counter = 0
         else:
-            iteration_counter +=1; #Считаем итерации для обновления
+            # Count frames without tracking objects
+            iteration_counter +=1;
             #print("Strange object!" + str(iteration_counter))
-            if iteration_counter > 10000: # Если какой-то объект, не подходящий по размерам под искомый объект, например световое пятно, держится больше 10к кадров, то обновляем маску
+            # If we had a lot of frames without tracking object, we update mask and tracking array
+            if iteration_counter > 10000:
                 ret, mask_frame = cap.read()
                 iteration_counter = 0
-                persons = [] #обнуляем массив хранящихся контуров
+                persons = []
 
-    # Рисуем на кадре все линии, надписи и так далее
+    # Draw lines and text on frames
     str_up = 'UP: '+ str(cnt_up)
     str_down = 'DOWN: '+ str(cnt_down)
-    frame = cv2.polylines(frame,[pts_L1], False, line_down_color, thickness=2)
-    frame = cv2.polylines(frame,[pts_L2], False, line_up_color,thickness=2)
-    # Добавляем надписи на кадры
-    cv2.putText(frame, str_up, (10,40), font, 0.5, (255,255,255), 2, cv2.LINE_AA)
-    cv2.putText(frame, str_up, (10,40),font, 0.5, (0,0,255), 1, cv2.LINE_AA)
-    cv2.putText(frame, str_down, (10,90), font, 0.5, (255,255,255), 2, cv2.LINE_AA)
-    cv2.putText(frame, str_down, (10,90), font, 0.5, (255,0,0), 1, cv2.LINE_AA)
+    frame = cv2.polylines(frame,[pts_L1], False, line_down_color, thickness = 2)
+    frame = cv2.polylines(frame,[pts_L2], False, line_up_color,thickness = 2)
 
-    # отображаем в окне работу нашего алгоритма
+    cv2.putText(frame, str_up, (10, 40), font, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(frame, str_up, (10, 40),font, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+    cv2.putText(frame, str_down, (10, 90), font, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(frame, str_down, (10, 90), font, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
+
+    # Show final frame
     #cv2.imshow('Frame',frame)
     cv2.imshow('Panel',frame)
 
-    # Считываем с клавиатуры клавиши
+    # Checking the key press
     k = cv2.waitKey(30) & 0xff
-    if k == 27: # По нажатию ESC закрываем программу
+    # if ESC - end program
+    if k == 27:
         break
-    elif k == 32: # По нажатию пробела обновляем кадр и сбрасываем счетчики
+    # If SPACE, we update mask and reset exit counters
+    elif k == 32:
         ret, mask_frame = cap.read()
         cnt_up = 0
         cnt_down = 0
 
-cap.release() # Заканчиваем работу с видеорядом с камеры
-cv2.destroyAllWindows() # Закрываем все окна
+# Close camera and all windows
+cap.release()
+cv2.destroyAllWindows()

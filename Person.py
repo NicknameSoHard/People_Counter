@@ -8,7 +8,7 @@ class MyPerson:
         self.y = yi
         self.tracks = []
         self.done = False
-        self.state = '0' # 0 - если объект не пересек контрольную линию, 1 - если пересек
+        self.state = '0' # 0 -if object did not crossed the line, 1 - if yes
         self.dir = None
 
     def getTracks(self):
@@ -32,10 +32,11 @@ class MyPerson:
     def timedOut(self):
         return self.done
 
+    # Check state and cross line
     def going_UP(self,mid_start,mid_end):
         if len(self.tracks) >= 2:
             if self.state == '0':
-                if self.tracks[-1][1] < mid_end and self.tracks[-2][1] >= mid_end: # Есть пересечение первичной линии конца
+                if self.tracks[-1][1] < mid_end and self.tracks[-2][1] >= mid_end:
                     self.state = '1'
                     self.dir = 'up'
                     return True
@@ -47,7 +48,7 @@ class MyPerson:
     def going_DOWN(self,mid_start,mid_end):
         if len(self.tracks) >= 2:
             if self.state == '0':
-                if self.tracks[-1][1] > mid_start and self.tracks[-2][1] <= mid_start: # Есть пересечение первичной линии начала
+                if self.tracks[-1][1] > mid_start and self.tracks[-2][1] <= mid_start:
                     self.state = '1'
                     self.dir = 'down'
                     return True
