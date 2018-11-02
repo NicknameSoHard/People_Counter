@@ -1,8 +1,8 @@
-## The work is conducted by HydroslidE and ostapella
+## author HydroslidE
 import numpy as np
 import cv2
-impoty time
-from datetime import datetime
+from time import time
+from datetime import datetime.now
 import Person
 
 ###############
@@ -36,7 +36,7 @@ cnt_down = 0
 
 # Catch video
 cap = cv2.VideoCapture("http://192.168.1.35//video.cgi")
-if not cap.isOpened(): #Подключение по айпи, если не удается, то попытка переключения на камеру по умолчанию
+if not cap.isOpened():
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print( "Video Capture error: Can't find camera.")
@@ -54,6 +54,7 @@ try:
 except:
     setting = [30, 215, 252, 288, 192]
     print("Load default setting")
+
 """
 Memo for settings:
 setting[0] - min threshold
@@ -101,11 +102,9 @@ kernelCl = np.ones((11,11),np.uint8)
 
 # Make Hershey Fonts
 font = cv2.FONT_HERSHEY_SIMPLEX
-
 # Create panel and trackpads
 Panel = np.zeros([1,256], np.uint8)
-cv2.namedWindow("Panel", cv2.WINDOW_NORMAL)
-cv2.resizeWindow("Panel", int(frame_width), 720)
+cv2.namedWindow("Panel")
 
 cv2.createTrackbar("THRSH_MIN", "Panel", setting[0], 255, nothing)
 cv2.createTrackbar("MIN OBJ", "Panel", setting[1], 255, nothing)
@@ -113,7 +112,7 @@ cv2.createTrackbar("MAX OBJ", "Panel", setting[2], 255, nothing)
 cv2.createTrackbar("DWN_LINE", "Panel", setting[3], int(frame_height), nothing)
 cv2.createTrackbar("TOP_LINE", "Panel", setting[4], int(frame_height), nothing)
 #cv2.createTrackbar("VISIBLE_FRAME", "Panel", setting[5], 1, nothing)
-
+#cv2.resizeWindow("Panel", int(frame_height)+15, -5)
 # Makes array for detector
 persons = []
 iteration_counter = 0
@@ -131,7 +130,7 @@ while(cap.isOpened()):
     gray_frame = cv2.cvtColor(frame_ABS, cv2.COLOR_BGR2GRAY)
 
     cv2.imshow("Panel", Panel)
-    # Работа с ползунками. Читаем значение ползунков
+
     now_setting[0] = cv2.getTrackbarPos("THRSH_MIN", "Panel")
     now_setting[1] = cv2.getTrackbarPos("MIN OBJ", "Panel")
     now_setting[2] = cv2.getTrackbarPos("MAX OBJ", "Panel")
@@ -189,7 +188,7 @@ while(cap.isOpened()):
         break
 
         # Find countours on image
-    img_, contours0, hierarchy_ = cv2.findContours(morphology_mask,
+    ___, contours0, ___ = cv2.findContours(morphology_mask,
         cv2.RETR_EXTERNAL, # Retrieves only the extreme outer contours
         cv2.CHAIN_APPROX_SIMPLE # Extracts only edge points of contours
     )
@@ -198,6 +197,10 @@ while(cap.isOpened()):
     for cnt in contours0:
         # Calculate size of countour
         area = cv2.contourArea(cnt)
+        # Сheck cameras on noise
+        print(area, (frame_width * frame_height))
+        if area > (frame_width * frame_height) * 0.90:
+            iteration_counter = 1000
         if area > min_areaTH and area < max_areaTH:
             # Image moments help you to calculate some features like center of mass of the object. We calculate it.
             M = cv2.moments(cnt)
@@ -255,11 +258,11 @@ while(cap.isOpened()):
             iteration_counter +=1;
             #print("Strange object!" + str(iteration_counter))
             # If we had a lot of frames without tracking object, we update mask and tracking array
-            if iteration_counter > 10000:
+            if iteration_counter > 1000:
                 ret, mask_frame = cap.read()
                 iteration_counter = 0
                 persons = []
-
+            print(iteration_counter)
     # Draw lines and text on frames
     str_up = 'UP: '+ str(cnt_up)
     str_down = 'DOWN: '+ str(cnt_down)
@@ -273,7 +276,7 @@ while(cap.isOpened()):
 
     # Show final frame
     #cv2.imshow('Frame',frame)
-    cv2.imshow('Panel',frame)
+    cv2.imshow('Frame',frame)
 
     # Checking the key press
     k = cv2.waitKey(30) & 0xff
