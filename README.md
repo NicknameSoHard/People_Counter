@@ -1,2 +1,2 @@
 # People-Detect-OpenCV
-Just my little project for work. 
+Little project for study 
