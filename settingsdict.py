@@ -2,7 +2,7 @@ import json
 import os
 
 
-class Settings:
+class SettingsDict:
     def __init__(self, setting_file='setting_file.json'):
         self.collection = dict()
 
@@ -19,6 +19,12 @@ class Settings:
 
     def __getitem__(self, field):
         return self.collection.get(field)
+
+    def __setitem__(self, key, value):
+        self.collection[key] = value
+
+    def get_settings_names(self):
+        return list(self.collection.keys())
 
     def load_from_file(self):
         try:
