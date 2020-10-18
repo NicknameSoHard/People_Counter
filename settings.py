@@ -3,10 +3,10 @@ import os
 
 
 class Settings:
-    def __init__(self):
+    def __init__(self, setting_file='setting_file.json'):
         self.collection = dict()
 
-        self.filename = 'setting_file.json'
+        self.filename = setting_file
         self.default_settings = {
             "THRSH_MIN": 30,
             "MIN_OBJ": 215,
@@ -16,6 +16,9 @@ class Settings:
         }
 
         self.load_from_file()
+
+    def __getitem__(self, field):
+        return self.collection.get(field)
 
     def load_from_file(self):
         try:

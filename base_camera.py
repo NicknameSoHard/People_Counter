@@ -5,7 +5,7 @@ from threading import Thread
 
 
 class Camera(Thread):
-    def __init__(self, cam_string):
+    def __init__(self, cam_string=0):
         self.cam = VideoCapture(cam_string)
         if not self.cam.isOpened():
             raise ValueError('Error VideoCapture')
@@ -30,14 +30,3 @@ class Camera(Thread):
         with self.lock:
             frame = self.current_frame.copy() if self.current_frame is not None else None
         return frame
-
-
-if __name__ == '__main__':
-    cam = Camera('http://37.235.208.126:8080/webcapture.jpg?command=snap&channel=1')
-
-    frame1 = cam.get_frame()
-    import time
-    time.sleep(1)
-    frame2 = cam.get_frame()
-    print('all!')
-
