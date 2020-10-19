@@ -5,7 +5,7 @@ import numpy
 
 
 from base_camera import Camera
-from person import MyPerson
+from person import Person
 from settingsdict import SettingsDict
 
 
@@ -76,6 +76,7 @@ class PeopleCounter:
 
         # Get mask
         mask_frame = self.cap.get_frame()
+        settings_change = True
         while True:
             # Get frame
             frame = self.cap.get_frame()
@@ -87,7 +88,6 @@ class PeopleCounter:
 
             cv2.imshow("Panel", panel)
 
-            settings_change = False
             # if position trackbars not equal settings
             for key in self.setting.get_settings_names():
                 trackbar_position = cv2.getTrackbarPos(key, "Panel")
@@ -103,19 +103,18 @@ class PeopleCounter:
                 # If setting line position change, recalculate and her
                 line_down = int(self.setting[3])
 #                print("Red line y:", str(line_down))
-                pt1 = [0, line_down]
-                pt2 = [self.cam_characteristic['frame_width'], line_down]
+                pt1, pt2 = [0, line_down], [self.cam_characteristic['frame_width'], line_down]
                 pts_L1 = numpy.array([pt1, pt2], numpy.int32)
                 pts_L1 = pts_L1.reshape((-1, 1, 2))
 
                 line_up = int(self.setting[4])
 #                print("Blue line y:", str(line_up))
-                pt3 = [0, line_up]
-                pt4 = [self.cam_characteristic['frame_width'], line_up]
+                pt3, pt4 = [0, line_up], [self.cam_characteristic['frame_width'], line_up]
                 pts_L2 = numpy.array([pt3, pt4], numpy.int32)
                 pts_L2 = pts_L2.reshape((-1, 1, 2))
 
                 self.setting.write_file()
+            settings_change = False
 
             try:
                 # Threshold the difference frame (Change color space to black and white)
@@ -123,7 +122,7 @@ class PeopleCounter:
                 # Morphology transformation (open and close). Just filter the noise in the image.
                 morphology_mask = cv2.morphologyEx(imBin, cv2.MORPH_OPEN, self.kernelOp)
                 morphology_mask = cv2.morphologyEx(morphology_mask, cv2.MORPH_CLOSE, self.kernelCl)
-                cv2.imshow('morphologyEx', morphology_mask)
+#                cv2.imshow('morphologyEx', morphology_mask)
             except Exception:
                 # All exceptions end the program.
                 print('Error threshold or morphology. End of programm.')
@@ -143,7 +142,7 @@ class PeopleCounter:
                 # Calculate size of contours
                 area = cv2.contourArea(cnt)
                 # check cameras on noise
-                if area > (self.cam_characteristic['frame_width'] * self.cam_characteristic['frame_height']) * 0.90:
+                if area > self.cam_characteristic['frame_width'] * self.cam_characteristic['frame_height'] * 0.90:
                     iteration_counter = 1000
                 if self.min_areaTH < area < self.max_areaTH:
                     M = cv2.moments(cnt)
@@ -154,7 +153,7 @@ class PeopleCounter:
                     x, y, w, h = cv2.boundingRect(cnt)
                     # Check for a new object
                     new = True
-                    for i in persons:
+                    for i in self.persons:
                         # If the object is close to already detected
                         if abs(cx-i.getX()) <= w and abs(cy-i.get_y()) <= h:
                             new = False
@@ -163,46 +162,44 @@ class PeopleCounter:
 
                             date_now = datetime.datetime.now()
                             # Check cross the line
-                            if i.going_up(line_down, line_up):
+                            if i.going_up(line_up):
                                 self.cnt_up += 1
                                 # Write log to console and file
-                                print(f"Person crossed going up at {date_now.strftime('%d.%m.%Y')}")
-                                if not self.save_log("up", date_now):
+                                if not self.save_log("up"):
                                     print("Logfile save error")
                                 break
 
-                            elif i.going_down(line_down, line_up):
+                            elif i.going_down(line_down):
                                 self.cnt_down += 1
-                                print(f"Person crossed going down at {date_now.strftime('%d.%m.%Y')}")
-                                if not self.save_log("down", date_now):
+                                if not self.save_log("down"):
                                     print("Logfile save error")
                                 break
                         else:
                             print("New obj")
                         # delete object if work done
                         if i.timed_out():
-                            index = persons.index(i)
-                            persons.pop(index)
+                            index = self.persons.index(i)
+                            self.persons.pop(index)
                             del i
 
                     # Create new object
                     if new:
-                        p = MyPerson(cx, cy)
-                        persons.append(p)
+                        p = Person(cx, cy)
+                        self.persons.append(p)
 
                     # Draw red dot in a middle object, and make scope.
                     cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
-                    cv2.rectangle(frame, (x, y),(x + w, y + h), (0, 255, 0), 2)
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                     iteration_counter = 0
                 else:
                     # Count frames without tracking objects
                     iteration_counter += 1
-                    # If we had a lot of frames without tracking object, we update mask and tracking array
+                    # If we had a lot of frames without tracking object,
+                    # we update mask and tracking array
                     if iteration_counter > 1000:
-                        ret, mask_frame = self.cap.read()
+                        ret, mask_frame = self.cap.get_frame()
                         iteration_counter = 0
-                        persons = []
-                    print(iteration_counter)
+                        self.persons = []
 
             # Draw lines and text on frames
             str_up = f"UP: {self.cnt_up}"
@@ -225,14 +222,14 @@ class PeopleCounter:
                 break
             # If SPACE, we update mask and reset exit counters
             elif k == 32:
-                ret, mask_frame = self.cap.read()
+                ret, mask_frame = self.cap.get_frame()
                 self.cnt_up = 0
                 self.cnt_down = 0
 
         # Close camera and all windows
-        self.cap.release()
         cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
-    PeopleCounter()
+    pc = PeopleCounter()
+    pc.run()
